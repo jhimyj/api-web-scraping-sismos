@@ -1,16 +1,38 @@
-from requests_html import HTMLSession
+import os
+import requests
 from bs4 import BeautifulSoup
 import uuid
 import boto3
+from dotenv import load_dotenv
 
 def lambda_handler(event, context):
-    session = HTMLSession()
+    # Obtén la clave de API de las variables de entorno
+    load_dotenv()
+    api_key = os.getenv("API_KEY")
+
+    if not api_key:
+        return {
+            'statusCode': 500,
+            'body': "La clave de API no está configurada en las variables de entorno"
+        }
+
+    # URL de la página que deseas scrapear
+    url = "https://ultimosismo.igp.gob.pe/ultimo-sismo/sismos-reportados"
+
+    # Construir la URL de ScraperAPI
+    scraperapi_url = f"https://api.scraperapi.com/?api_key={api_key}&url={url}&render=true"
+
     try:
-        # Hacer la solicitud HTTP y renderizar la página con JavaScript
-        response = session.get("https://ultimosismo.igp.gob.pe/ultimo-sismo/sismos-reportados")
-        response.html.render()
-        # response.html.render()  # Renderizar el contenido dinámico (JavaScript)
-        html = response.html.html  # Obtener el HTML renderizado
+        # Hacer la solicitud a ScraperAPI
+        response = requests.get(scraperapi_url)
+
+        if response.status_code != 200:
+            return {
+                'statusCode': response.status_code,
+                'body': f"Error al obtener la página: {response.text}"
+            }
+        html = response.text  # HTML renderizado
+        print(html)
     except Exception as e:
         return {
             'statusCode': 500,
@@ -36,9 +58,7 @@ def lambda_handler(event, context):
     for row in table.find_all('tr')[1:]:  # Omitir el encabezado
         cells = row.find_all('td')[:-1]  # Extraer todas las celdas de la fila
         rows.append({headers[i]: cell.text.strip() for i, cell in enumerate(cells)})
-
-    print(rows)
-
+   
     # Guardar los datos en DynamoDB
     dynamodb = boto3.resource('dynamodb')
     dynamodb_table = dynamodb.Table('TablaWebScrappingSismos')
@@ -66,5 +86,3 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': rows
     }
-
-
