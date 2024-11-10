@@ -3,12 +3,10 @@ import requests
 from bs4 import BeautifulSoup
 import uuid
 import boto3
-from dotenv import load_dotenv
 
 def lambda_handler(event, context):
     # Obtén la clave de API de las variables de entorno
-    load_dotenv()
-    api_key = os.getenv("API_KEY")
+    api_key = os.environ.get("API_KEY")
 
     if not api_key:
         return {
