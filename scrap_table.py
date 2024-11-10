@@ -14,10 +14,10 @@ def lambda_handler(event, context):
                 'body': 'Error al acceder a la página web'
             }
 
-        # Esperar a que se cargue la tabla
+        # esperamos a que se cargue la tabla
         page.wait_for_selector("table")
 
-        # Obtener el HTML
+        # obtenemos el html
         html = page.content()
         browser.close()
 
